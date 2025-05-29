@@ -10,6 +10,10 @@
     <modules>
         <module>tingshu_common</module>
         <module>tingshu_model</module>
+        <module>tingshu_core</module>
+        <module>tingshu_feign_client</module>
+        <module>tingshu_gateway</module>
+        <module>tingshu_mbg</module>
     </modules>
 
     <parent>
