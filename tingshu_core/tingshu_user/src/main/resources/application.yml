@@ -74,6 +74,8 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
+  profiles:
+    active: dev
 wechat:
   login:
     #小程序授权登录

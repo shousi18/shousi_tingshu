@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shousi.mapper.UserInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.shousi.entity.UserInfo">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="phone" column="phone" jdbcType="VARCHAR"/>
+            <result property="password" column="password" jdbcType="VARCHAR"/>
+            <result property="wxOpenId" column="wx_open_id" jdbcType="VARCHAR"/>
+            <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
+            <result property="avatarUrl" column="avatar_url" jdbcType="VARCHAR"/>
+            <result property="isVip" column="is_vip" jdbcType="TINYINT"/>
+            <result property="vipExpireTime" column="vip_expire_time" jdbcType="TIMESTAMP"/>
+            <result property="gender" column="gender" jdbcType="TINYINT"/>
+            <result property="birthday" column="birthday" jdbcType="DATE"/>
+            <result property="intro" column="intro" jdbcType="VARCHAR"/>
+            <result property="certificationType" column="certification_type" jdbcType="TINYINT"/>
+            <result property="certificationStatus" column="certification_status" jdbcType="TINYINT"/>
+            <result property="status" column="status" jdbcType="CHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="isDeleted" column="is_deleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,phone,password,
+        wx_open_id,nickname,avatar_url,
+        is_vip,vip_expire_time,gender,
+        birthday,intro,certification_type,
+        certification_status,status,create_time,
+        update_time,is_deleted
+    </sql>
+</mapper>
