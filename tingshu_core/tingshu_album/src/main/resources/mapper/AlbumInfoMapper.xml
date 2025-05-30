@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shousi.mapper.AlbumInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.shousi.entity.AlbumInfo">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="userId" column="user_id" jdbcType="BIGINT"/>
+            <result property="albumTitle" column="album_title" jdbcType="VARCHAR"/>
+            <result property="category3Id" column="category3_id" jdbcType="BIGINT"/>
+            <result property="albumIntro" column="album_intro" jdbcType="VARCHAR"/>
+            <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
+            <result property="includeTrackCount" column="include_track_count" jdbcType="INTEGER"/>
+            <result property="isFinished" column="is_finished" jdbcType="CHAR"/>
+            <result property="estimatedTrackCount" column="estimated_track_count" jdbcType="INTEGER"/>
+            <result property="albumRichIntro" column="album_rich_intro" jdbcType="VARCHAR"/>
+            <result property="qualityScore" column="quality_score" jdbcType="DECIMAL"/>
+            <result property="payType" column="pay_type" jdbcType="CHAR"/>
+            <result property="priceType" column="price_type" jdbcType="CHAR"/>
+            <result property="price" column="price" jdbcType="DECIMAL"/>
+            <result property="discount" column="discount" jdbcType="DECIMAL"/>
+            <result property="vipDiscount" column="vip_discount" jdbcType="DECIMAL"/>
+            <result property="tracksForFree" column="tracks_for_free" jdbcType="INTEGER"/>
+            <result property="secondsForFree" column="seconds_for_free" jdbcType="INTEGER"/>
+            <result property="buyNotes" column="buy_notes" jdbcType="VARCHAR"/>
+            <result property="sellingPoint" column="selling_point" jdbcType="VARCHAR"/>
+            <result property="isOpen" column="is_open" jdbcType="CHAR"/>
+            <result property="status" column="status" jdbcType="CHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="isDeleted" column="is_deleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,album_title,
+        category3_id,album_intro,cover_url,
+        include_track_count,is_finished,estimated_track_count,
+        album_rich_intro,quality_score,pay_type,
+        price_type,price,discount,
+        vip_discount,tracks_for_free,seconds_for_free,
+        buy_notes,selling_point,is_open,
+        status,create_time,update_time,
+        is_deleted
+    </sql>
+</mapper>

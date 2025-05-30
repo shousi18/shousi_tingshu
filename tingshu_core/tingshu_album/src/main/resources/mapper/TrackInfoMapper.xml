@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shousi.mapper.TrackInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.shousi.entity.TrackInfo">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="userId" column="user_id" jdbcType="VARCHAR"/>
+            <result property="albumId" column="album_id" jdbcType="BIGINT"/>
+            <result property="trackTitle" column="track_title" jdbcType="VARCHAR"/>
+            <result property="orderNum" column="order_num" jdbcType="INTEGER"/>
+            <result property="trackIntro" column="track_intro" jdbcType="VARCHAR"/>
+            <result property="trackRichIntro" column="track_rich_intro" jdbcType="VARCHAR"/>
+            <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
+            <result property="mediaDuration" column="media_duration" jdbcType="DECIMAL"/>
+            <result property="mediaFileId" column="media_file_id" jdbcType="VARCHAR"/>
+            <result property="mediaUrl" column="media_url" jdbcType="VARCHAR"/>
+            <result property="mediaSize" column="media_size" jdbcType="BIGINT"/>
+            <result property="mediaType" column="media_type" jdbcType="VARCHAR"/>
+            <result property="source" column="source" jdbcType="CHAR"/>
+            <result property="isOpen" column="is_open" jdbcType="CHAR"/>
+            <result property="status" column="status" jdbcType="CHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="isDeleted" column="is_deleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,album_id,
+        track_title,order_num,track_intro,
+        track_rich_intro,cover_url,media_duration,
+        media_file_id,media_url,media_size,
+        media_type,source,is_open,
+        status,create_time,update_time,
+        is_deleted
+    </sql>
+</mapper>

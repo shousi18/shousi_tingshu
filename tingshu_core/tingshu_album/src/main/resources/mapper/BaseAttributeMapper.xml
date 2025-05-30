@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shousi.mapper.BaseAttributeMapper">
+
+    <resultMap id="BaseResultMap" type="com.shousi.entity.BaseAttribute">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="category1Id" column="category1_id" jdbcType="BIGINT"/>
+            <result property="attributeName" column="attribute_name" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="isDeleted" column="is_deleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,category1_id,attribute_name,
+        create_time,update_time,is_deleted
+    </sql>
+</mapper>
