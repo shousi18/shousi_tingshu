@@ -2,6 +2,9 @@ package com.shousi.mapper;
 
 import com.shousi.entity.BaseCategoryView;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.shousi.vo.CategoryVo;
+
+import java.util.List;
 
 /**
 * @author 86172
@@ -11,6 +14,11 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface BaseCategoryViewMapper extends BaseMapper<BaseCategoryView> {
 
+    /**
+     * 获取所有分类信息
+     * @return
+     */
+    List<CategoryVo> getAllCategoryList();
 }
 
 

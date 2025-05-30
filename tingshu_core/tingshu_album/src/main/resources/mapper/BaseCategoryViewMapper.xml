@@ -23,4 +23,31 @@
         category3_name,create_time,update_time,
         is_deleted
     </sql>
+
+    <resultMap id="categoryMap" type="com.shousi.vo.CategoryVo">
+        <id property="categoryId" column="category1Id"/>
+        <result property="categoryName" column="category1Name"/>
+        <collection property="categoryChild" ofType="com.shousi.vo.CategoryVo">
+            <id property="categoryId" column="category2Id"/>
+            <result property="categoryName" column="category2Name"/>
+            <collection property="categoryChild" ofType="com.shousi.vo.CategoryVo">
+                <id property="categoryId" column="category3Id"/>
+                <result property="categoryName" column="category3Name"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="getAllCategoryList" resultMap="categoryMap">
+        SELECT
+        c1.id category1Id,
+        c1.NAME category1Name,
+        c2.id category2Id,
+        c2.NAME category2Name,
+        c3.id category3Id,
+        c3.NAME category3Name
+        FROM
+        base_category1 c1
+        LEFT JOIN base_category2 c2 ON c1.id = c2.category1_id
+        LEFT JOIN base_category3 c3 ON c2.id = c3.category2_id
+    </select>
 </mapper>

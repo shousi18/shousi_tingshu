@@ -5,6 +5,7 @@ import com.shousi.service.BaseCategoryViewService;
 import com.shousi.entity.BaseCategoryView;
 import com.shousi.mapper.BaseCategoryViewMapper;
 import com.shousi.vo.CategoryVo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -21,8 +22,12 @@ import java.util.stream.Collectors;
 public class BaseCategoryViewServiceImpl extends ServiceImpl<BaseCategoryViewMapper, BaseCategoryView>
         implements BaseCategoryViewService {
 
-    @Override
-    public List<CategoryVo> getAllCategoryList() {
+    @Autowired
+    private BaseCategoryViewMapper baseCategoryViewMapper;
+
+//    @Override
+    @Deprecated
+    public List<CategoryVo> getAllCategoryList1() {
         // 获取所有分类
         List<BaseCategoryView> allCategoryView = this.list();
         if (CollectionUtils.isEmpty(allCategoryView)) {
@@ -63,6 +68,12 @@ public class BaseCategoryViewServiceImpl extends ServiceImpl<BaseCategoryViewMap
                     category1Vo.setCategoryChild(category1Children);
                     return category1Vo;
                 }).collect(Collectors.toList());
+    }
+
+
+    @Override
+    public List<CategoryVo> getAllCategoryList() {
+        return baseCategoryViewMapper.getAllCategoryList();
     }
 }
 
