@@ -5,9 +5,15 @@ import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.shousi.constant.RedisConstant;
 import com.shousi.entity.UserInfo;
+import com.shousi.login.TingShuLogin;
 import com.shousi.result.RetVal;
 import com.shousi.service.UserInfoService;
+import com.shousi.util.AuthContextHolder;
+import com.shousi.vo.UserInfoVo;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import me.chanjar.weixin.common.error.WxErrorException;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+@Tag(name = "微信登录管理")
 @RestController
 @RequestMapping("/api/user/wxLogin")
 public class WxLoginController {
@@ -33,8 +40,9 @@ public class WxLoginController {
     @Autowired
     private RedisTemplate<Object, Object> redisTemplate;
 
+    @Operation(summary = "微信登录")
     @GetMapping("/wxLogin/{code}")
-    public RetVal<?> wxLogin(@PathVariable String code) throws WxErrorException {
+    public RetVal<Map<String, Object>> wxLogin(@PathVariable String code) throws WxErrorException {
         // 获取微信登录信息
         WxMaJscode2SessionResult sessionInfo = wxMaService.getUserService().getSessionInfo(code);
         // 获取openid
@@ -58,5 +66,16 @@ public class WxLoginController {
         Map<String, Object> map = new HashMap<>();
         map.put("token", uuid);
         return RetVal.ok(map);
+    }
+
+    @TingShuLogin
+    @Operation(summary = "获取用户信息")
+    @GetMapping("/getUserInfo")
+    public RetVal<UserInfoVo> getUserInfo() {
+        Long userId = AuthContextHolder.getUserId();
+        UserInfo userInfo = userInfoService.getById(userId);
+        UserInfoVo userInfoVo = new UserInfoVo();
+        BeanUtils.copyProperties(userInfo, userInfoVo);
+        return RetVal.ok(userInfoVo);
     }
 }
