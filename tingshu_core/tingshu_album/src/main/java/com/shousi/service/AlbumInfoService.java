@@ -1,7 +1,10 @@
 package com.shousi.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.shousi.entity.AlbumInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shousi.query.AlbumInfoQuery;
+import com.shousi.vo.AlbumTempVo;
 
 /**
 * @author 86172
@@ -15,4 +18,12 @@ public interface AlbumInfoService extends IService<AlbumInfo> {
      * @param albumInfo
      */
     void saveAlbumInfo(AlbumInfo albumInfo);
+
+    /**
+     * 分页查询用户专辑
+     * @param pageParam
+     * @param albumInfoQuery
+     * @return
+     */
+    IPage<AlbumTempVo> getUserAlbumByPage(IPage<AlbumTempVo> pageParam, AlbumInfoQuery albumInfoQuery);
 }

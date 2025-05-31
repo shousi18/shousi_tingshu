@@ -1,7 +1,11 @@
 package com.shousi.mapper;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.shousi.entity.AlbumInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.shousi.query.AlbumInfoQuery;
+import com.shousi.vo.AlbumTempVo;
+import org.apache.ibatis.annotations.Param;
 
 /**
 * @author 86172
@@ -11,6 +15,13 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface AlbumInfoMapper extends BaseMapper<AlbumInfo> {
 
+    /**
+     * 分页查询用户专辑
+     * @param pageParam
+     * @param albumInfoQuery
+     * @return
+     */
+    IPage<AlbumTempVo> getUserAlbumByPage(@Param("pageParam") IPage<AlbumTempVo> pageParam, @Param("albumInfoQuery") AlbumInfoQuery albumInfoQuery);
 }
 
 

@@ -1,15 +1,18 @@
 package com.shousi.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shousi.constant.SystemConstant;
 import com.shousi.entity.AlbumAttributeValue;
 import com.shousi.entity.AlbumInfo;
 import com.shousi.entity.AlbumStat;
+import com.shousi.mapper.AlbumInfoMapper;
+import com.shousi.query.AlbumInfoQuery;
 import com.shousi.service.AlbumAttributeValueService;
 import com.shousi.service.AlbumInfoService;
-import com.shousi.mapper.AlbumInfoMapper;
 import com.shousi.service.AlbumStatService;
 import com.shousi.util.AuthContextHolder;
+import com.shousi.vo.AlbumTempVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -32,6 +35,9 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     @Autowired
     private AlbumAttributeValueService albumAttributeValueService;
 
+    @Autowired
+    private AlbumInfoMapper albumInfoMapper;
+
     @Override
     public void saveAlbumInfo(AlbumInfo albumInfo) {
         Long userId = AuthContextHolder.getUserId();
@@ -53,6 +59,11 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
         List<AlbumStat> albumStats = buildAlbumStatData(albumInfo.getId());
         albumStatService.saveBatch(albumStats);
         // todo 后面还要保存的信息
+    }
+
+    @Override
+    public IPage<AlbumTempVo> getUserAlbumByPage(IPage<AlbumTempVo> pageParam, AlbumInfoQuery albumInfoQuery) {
+        return albumInfoMapper.getUserAlbumByPage(pageParam, albumInfoQuery);
     }
 
     private List<AlbumStat> buildAlbumStatData(Long albumId) {

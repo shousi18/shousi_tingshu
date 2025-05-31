@@ -1,16 +1,18 @@
 package com.shousi.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shousi.entity.AlbumInfo;
 import com.shousi.login.TingShuLogin;
+import com.shousi.query.AlbumInfoQuery;
 import com.shousi.result.RetVal;
 import com.shousi.service.AlbumInfoService;
+import com.shousi.util.AuthContextHolder;
+import com.shousi.vo.AlbumTempVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "专辑管理")
 @RestController
@@ -26,5 +28,18 @@ public class AlbumController {
     public RetVal<?> saveAlbumInfo(@RequestBody AlbumInfo albumInfo) {
         albumInfoService.saveAlbumInfo(albumInfo);
         return RetVal.ok();
+    }
+
+    @TingShuLogin
+    @Operation(summary = "分页查询专辑")
+    @PostMapping("/getUserAlbumByPage/{pageNum}/{pageSize}")
+    public RetVal<IPage<AlbumTempVo>> getUserAlbumByPage(
+            @PathVariable("pageNum") Long pageNum,
+            @PathVariable("pageSize") Long pageSize,
+            @RequestBody AlbumInfoQuery albumInfoQuery) {
+        albumInfoQuery.setUserId(AuthContextHolder.getUserId());
+        IPage<AlbumTempVo> pageParam = new Page<>(pageNum, pageSize);
+        pageParam = albumInfoService.getUserAlbumByPage(pageParam, albumInfoQuery);
+        return RetVal.ok(pageParam);
     }
 }
