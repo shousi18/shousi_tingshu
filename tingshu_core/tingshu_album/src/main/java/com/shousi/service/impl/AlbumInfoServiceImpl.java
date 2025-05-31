@@ -1,5 +1,6 @@
 package com.shousi.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shousi.constant.SystemConstant;
@@ -65,6 +66,16 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     @Override
     public IPage<AlbumTempVo> getUserAlbumByPage(IPage<AlbumTempVo> pageParam, AlbumInfoQuery albumInfoQuery) {
         return albumInfoMapper.getUserAlbumByPage(pageParam, albumInfoQuery);
+    }
+
+    @Override
+    public AlbumInfo getAlbumInfoById(Long id) {
+        AlbumInfo albumInfo = this.getById(id);
+        LambdaQueryWrapper<AlbumAttributeValue> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(AlbumAttributeValue::getAlbumId, id);
+        List<AlbumAttributeValue> albumAttributeValueList = albumAttributeValueService.list(queryWrapper);
+        albumInfo.setAlbumPropertyValueList(albumAttributeValueList);
+        return albumInfo;
     }
 
     private List<AlbumStat> buildAlbumStatData(Long albumId) {

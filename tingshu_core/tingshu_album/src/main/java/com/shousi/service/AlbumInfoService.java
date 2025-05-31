@@ -26,4 +26,11 @@ public interface AlbumInfoService extends IService<AlbumInfo> {
      * @return
      */
     IPage<AlbumTempVo> getUserAlbumByPage(IPage<AlbumTempVo> pageParam, AlbumInfoQuery albumInfoQuery);
+
+    /**
+     * 根据id查询专辑信息
+     * @param id
+     * @return
+     */
+    AlbumInfo getAlbumInfoById(Long id);
 }
