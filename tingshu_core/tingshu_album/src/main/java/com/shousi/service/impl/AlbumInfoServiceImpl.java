@@ -42,6 +42,7 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     public void saveAlbumInfo(AlbumInfo albumInfo) {
         Long userId = AuthContextHolder.getUserId();
         albumInfo.setUserId(userId);
+        albumInfo.setStatus(SystemConstant.ALBUM_STATUS_NO_PASS);
         if (!SystemConstant.FREE_ALBUM.equals(albumInfo.getPayType())) {
             // 不是免费的专辑，就只免费开放前五章
             albumInfo.setTracksForFree(5);
