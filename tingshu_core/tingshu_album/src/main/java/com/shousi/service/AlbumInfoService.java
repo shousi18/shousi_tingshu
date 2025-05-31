@@ -33,4 +33,10 @@ public interface AlbumInfoService extends IService<AlbumInfo> {
      * @return
      */
     AlbumInfo getAlbumInfoById(Long id);
+
+    /**
+     * 修改专辑信息
+     * @param albumInfo
+     */
+    void updateAlbumInfo(AlbumInfo albumInfo);
 }

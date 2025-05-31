@@ -16,6 +16,7 @@ import com.shousi.util.AuthContextHolder;
 import com.shousi.vo.AlbumTempVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     private AlbumInfoMapper albumInfoMapper;
 
     @Override
+    @Transactional
     public void saveAlbumInfo(AlbumInfo albumInfo) {
         Long userId = AuthContextHolder.getUserId();
         albumInfo.setUserId(userId);
@@ -76,6 +78,25 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
         List<AlbumAttributeValue> albumAttributeValueList = albumAttributeValueService.list(queryWrapper);
         albumInfo.setAlbumPropertyValueList(albumAttributeValueList);
         return albumInfo;
+    }
+
+    @Override
+    @Transactional
+    public void updateAlbumInfo(AlbumInfo albumInfo) {
+        this.updateById(albumInfo);
+        // 删除专辑属性值
+        LambdaQueryWrapper<AlbumAttributeValue>  queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(AlbumAttributeValue::getAlbumId, albumInfo.getId());
+        albumAttributeValueService.remove(queryWrapper);
+        // 保存专辑属性值
+        List<AlbumAttributeValue> albumPropertyValueList = albumInfo.getAlbumPropertyValueList();
+        if (!CollectionUtils.isEmpty(albumPropertyValueList)) {
+            albumPropertyValueList.forEach(albumAttributeValue -> {
+                albumAttributeValue.setAlbumId(albumInfo.getId());
+            });
+            albumAttributeValueService.saveBatch(albumPropertyValueList);
+        }
+        // todo 还有其他操作待做
     }
 
     private List<AlbumStat> buildAlbumStatData(Long albumId) {

@@ -50,4 +50,12 @@ public class AlbumController {
         AlbumInfo albumInfo = albumInfoService.getAlbumInfoById(id);
         return RetVal.ok(albumInfo);
     }
+
+    @TingShuLogin
+    @Operation(summary = "修改专辑")
+    @PutMapping("/updateAlbumInfo")
+    public RetVal<?> updateAlbumInfo(@RequestBody AlbumInfo albumInfo) {
+        albumInfoService.updateAlbumInfo(albumInfo);
+        return RetVal.ok();
+    }
 }
