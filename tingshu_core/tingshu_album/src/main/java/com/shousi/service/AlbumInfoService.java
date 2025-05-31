@@ -10,4 +10,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface AlbumInfoService extends IService<AlbumInfo> {
 
+    /**
+     * 保存专辑信息
+     * @param albumInfo
+     */
+    void saveAlbumInfo(AlbumInfo albumInfo);
 }
