@@ -71,13 +71,15 @@ spring:
     multipart:
       max-file-size: 100MB     #单个文件最大限制
       max-request-size: 200MB  #多个文件最大限制
+  profiles:
+    active: dev
 minio:
   endpoint: http://192.168.200.129:9000
   access-key: enjoy6288
   secret-key: enjoy6288
   bucket-name: shousi
 vod:
-  appId: 1307503602
+  appId:
   secretId:
   secretKey:
   region: ap-guangzhou
