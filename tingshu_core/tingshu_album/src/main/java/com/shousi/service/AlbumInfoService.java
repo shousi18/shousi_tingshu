@@ -39,4 +39,10 @@ public interface AlbumInfoService extends IService<AlbumInfo> {
      * @param albumInfo
      */
     void updateAlbumInfo(AlbumInfo albumInfo);
+
+    /**
+     * 删除专辑信息
+     * @param albumId
+     */
+    void deleteAlbumInfo(Long albumId);
 }

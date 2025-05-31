@@ -58,4 +58,12 @@ public class AlbumController {
         albumInfoService.updateAlbumInfo(albumInfo);
         return RetVal.ok();
     }
+
+    @TingShuLogin
+    @Operation(summary = "删除专辑")
+    @DeleteMapping("/deleteAlbumInfo/{albumId}")
+    public RetVal<?> deleteAlbumInfo(@PathVariable Long albumId) {
+        albumInfoService.deleteAlbumInfo(albumId);
+        return RetVal.ok();
+    }
 }

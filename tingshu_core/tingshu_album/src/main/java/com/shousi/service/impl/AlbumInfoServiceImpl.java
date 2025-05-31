@@ -85,7 +85,7 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     public void updateAlbumInfo(AlbumInfo albumInfo) {
         this.updateById(albumInfo);
         // 删除专辑属性值
-        LambdaQueryWrapper<AlbumAttributeValue>  queryWrapper = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<AlbumAttributeValue> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(AlbumAttributeValue::getAlbumId, albumInfo.getId());
         albumAttributeValueService.remove(queryWrapper);
         // 保存专辑属性值
@@ -97,6 +97,22 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
             albumAttributeValueService.saveBatch(albumPropertyValueList);
         }
         // todo 还有其他操作待做
+    }
+
+    @Override
+    @Transactional
+    public void deleteAlbumInfo(Long albumId) {
+        // 删除专辑信息
+        this.removeById(albumId);
+        // 删除专辑属性值
+        LambdaQueryWrapper<AlbumAttributeValue> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(AlbumAttributeValue::getAlbumId, albumId);
+        albumAttributeValueService.remove(queryWrapper);
+        // 删除专辑数据信息
+        LambdaQueryWrapper<AlbumStat> statLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        statLambdaQueryWrapper.eq(AlbumStat::getAlbumId, albumId);
+        albumStatService.remove(statLambdaQueryWrapper);
+        // todo 删除专辑其他信息
     }
 
     private List<AlbumStat> buildAlbumStatData(Long albumId) {
