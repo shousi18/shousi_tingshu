@@ -1,14 +1,19 @@
 package com.shousi.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shousi.entity.AlbumInfo;
 import com.shousi.entity.TrackInfo;
 import com.shousi.login.TingShuLogin;
+import com.shousi.mapper.TrackInfoMapper;
+import com.shousi.query.TrackInfoQuery;
 import com.shousi.result.RetVal;
 import com.shousi.service.AlbumInfoService;
 import com.shousi.service.TrackInfoService;
 import com.shousi.service.VodService;
 import com.shousi.util.AuthContextHolder;
+import com.shousi.vo.TrackTempVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +34,9 @@ public class TrackController {
     @Autowired
     private VodService vodService;
 
+    @Autowired
+    private TrackInfoService trackInfoService;
+
     @TingShuLogin
     @Operation(summary = "根据用户ID查询用户的专辑信息")
     @GetMapping("/findAlbumByUserId")
@@ -48,13 +56,23 @@ public class TrackController {
         return RetVal.ok(resultMap);
     }
 
-    @Autowired
-    private TrackInfoService trackInfoService;
     @Operation(summary = "新增声音")
     @TingShuLogin
     @PostMapping("saveTrackInfo")
     public RetVal<?> saveTrackInfo(@RequestBody TrackInfo trackInfo) {
         trackInfoService.saveTrackInfo(trackInfo);
         return RetVal.ok();
+    }
+
+    @TingShuLogin
+    @Operation(summary = "获取当前用户声音分页列表")
+    @PostMapping("findUserTrackPage/{pageNum}/{pageSize}")
+    public RetVal findUserTrackPage(@PathVariable Long pageNum,
+                                    @PathVariable Long pageSize,
+                                    @RequestBody TrackInfoQuery trackInfoQuery) {
+        trackInfoQuery.setUserId(AuthContextHolder.getUserId());
+        IPage<TrackTempVo> pageParam = new Page<>(pageNum, pageSize);
+        pageParam = trackInfoService.findUserTrackPage(pageParam, trackInfoQuery);
+        return RetVal.ok(pageParam);
     }
 }

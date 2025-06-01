@@ -2,19 +2,23 @@ package com.shousi.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shousi.constant.SystemConstant;
 import com.shousi.entity.AlbumInfo;
 import com.shousi.entity.TrackInfo;
 import com.shousi.entity.TrackStat;
 import com.shousi.mapper.TrackInfoMapper;
+import com.shousi.query.TrackInfoQuery;
 import com.shousi.service.AlbumInfoService;
 import com.shousi.service.TrackInfoService;
 import com.shousi.service.TrackStatService;
 import com.shousi.service.VodService;
 import com.shousi.util.AuthContextHolder;
+import com.shousi.vo.TrackTempVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +41,11 @@ public class TrackInfoServiceImpl extends ServiceImpl<TrackInfoMapper, TrackInfo
     @Autowired
     private TrackStatService trackStatService;
 
+    @Autowired
+    private TrackInfoMapper trackInfoMapper;
+
     @Override
+    @Transactional
     public void saveTrackInfo(TrackInfo trackInfo) {
         trackInfo.setUserId(AuthContextHolder.getUserId());
         trackInfo.setStatus(SystemConstant.TRACK_APPROVED);
@@ -66,6 +74,11 @@ public class TrackInfoServiceImpl extends ServiceImpl<TrackInfoMapper, TrackInfo
         //初始化声音的统计数据
         List<TrackStat> trackStatList = buildTrackStatData(trackInfo.getId());
         trackStatService.saveBatch(trackStatList);
+    }
+
+    @Override
+    public IPage<TrackTempVo> findUserTrackPage(IPage<TrackTempVo> pageParam, TrackInfoQuery trackInfoQuery) {
+        return trackInfoMapper.findUserTrackPage(pageParam, trackInfoQuery);
     }
 
     private List<TrackStat> buildTrackStatData(Long trackId) {
