@@ -20,4 +20,10 @@ public interface VodService {
      * @param trackInfo
      */
     void getTrackMediaInfo(TrackInfo trackInfo);
+
+    /**
+     * 删除声音
+     * @param mediaFileId
+     */
+    void removeTrack(String mediaFileId);
 }

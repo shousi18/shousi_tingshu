@@ -67,12 +67,36 @@ public class TrackController {
     @TingShuLogin
     @Operation(summary = "获取当前用户声音分页列表")
     @PostMapping("findUserTrackPage/{pageNum}/{pageSize}")
-    public RetVal findUserTrackPage(@PathVariable Long pageNum,
+    public RetVal<IPage<TrackTempVo>> findUserTrackPage(@PathVariable Long pageNum,
                                     @PathVariable Long pageSize,
                                     @RequestBody TrackInfoQuery trackInfoQuery) {
         trackInfoQuery.setUserId(AuthContextHolder.getUserId());
         IPage<TrackTempVo> pageParam = new Page<>(pageNum, pageSize);
         pageParam = trackInfoService.findUserTrackPage(pageParam, trackInfoQuery);
         return RetVal.ok(pageParam);
+    }
+
+    @TingShuLogin
+    @Operation(summary = "根据id获取声音信息")
+    @GetMapping("getTrackInfoById/{trackId}")
+    public RetVal<TrackInfo> getTrackInfoById(@PathVariable Long trackId) {
+        TrackInfo trackInfo = trackInfoService.getById(trackId);
+        return RetVal.ok(trackInfo);
+    }
+
+    @TingShuLogin
+    @Operation(summary = "修改声音")
+    @PutMapping("updateTrackInfoById")
+    public RetVal<?> updateTrackInfoById(@RequestBody TrackInfo trackInfo) {
+        trackInfoService.updateTrackInfoById(trackInfo);
+        return RetVal.ok();
+    }
+
+    @TingShuLogin
+    @Operation(summary = "删除声音")
+    @DeleteMapping("deleteTrackInfo/{trackId}")
+    public RetVal<?> deleteTrackInfo(@PathVariable Long trackId) {
+        trackInfoService.deleteTrackInfo(trackId);
+        return RetVal.ok();
     }
 }

@@ -81,6 +81,29 @@ public class TrackInfoServiceImpl extends ServiceImpl<TrackInfoMapper, TrackInfo
         return trackInfoMapper.findUserTrackPage(pageParam, trackInfoQuery);
     }
 
+    @Override
+    public void updateTrackInfoById(TrackInfo trackInfo) {
+        vodService.getTrackMediaInfo(trackInfo);
+        updateById(trackInfo);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTrackInfo(Long trackId) {
+        TrackInfo trackInfo = getById(trackId);
+        removeById(trackId);
+        //删除统计信息
+        trackStatService.remove(new LambdaQueryWrapper<TrackStat>().eq(TrackStat::getTrackId,trackId));
+        // 更新专辑的音频个数
+        AlbumInfo albumInfo = albumInfoService.getById(trackInfo.getAlbumId());
+        LambdaUpdateWrapper<AlbumInfo> albumInfoLambdaUpdateWrapper = new LambdaUpdateWrapper<>();
+        albumInfoLambdaUpdateWrapper.eq(AlbumInfo::getId, albumInfo.getId())
+                .set(AlbumInfo::getIncludeTrackCount, albumInfo.getIncludeTrackCount() - 1);
+        albumInfoService.update(albumInfoLambdaUpdateWrapper);
+        //删除声音
+        vodService.removeTrack(trackInfo.getMediaFileId());
+    }
+
     private List<TrackStat> buildTrackStatData(Long trackId) {
         List<TrackStat> trackStatList = new ArrayList<>();
         initTrackStat(trackId, trackStatList, SystemConstant.PLAY_NUM_TRACK);

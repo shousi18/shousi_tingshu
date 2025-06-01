@@ -10,6 +10,7 @@ import com.shousi.util.UploadFileUtil;
 import com.tencentcloudapi.common.Credential;
 import com.tencentcloudapi.common.exception.TencentCloudSDKException;
 import com.tencentcloudapi.vod.v20180717.VodClient;
+import com.tencentcloudapi.vod.v20180717.models.DeleteMediaRequest;
 import com.tencentcloudapi.vod.v20180717.models.DescribeMediaInfosRequest;
 import com.tencentcloudapi.vod.v20180717.models.DescribeMediaInfosResponse;
 import com.tencentcloudapi.vod.v20180717.models.MediaInfo;
@@ -69,6 +70,19 @@ public class VodServiceImpl implements VodService {
             trackInfo.setMediaSize(mediaInfo.getMetaData().getSize());
             trackInfo.setMediaDuration(BigDecimal.valueOf(mediaInfo.getMetaData().getDuration()));
             trackInfo.setMediaType(mediaInfo.getBasicInfo().getType());
+        }
+    }
+
+    @Override
+    public void removeTrack(String mediaFileId) {
+        Credential cred = new Credential(vodProperties.getSecretId(), vodProperties.getSecretKey());
+        VodClient client = new VodClient(cred,  vodProperties.getRegion());
+        DeleteMediaRequest req = new DeleteMediaRequest();
+        req.setFileId(mediaFileId);
+        try {
+            client.DeleteMedia(req);
+        } catch (TencentCloudSDKException e) {
+            throw new RuntimeException(e);
         }
     }
 }
