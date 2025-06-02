@@ -5,6 +5,8 @@ import com.shousi.service.BaseCategory1Service;
 import com.shousi.entity.BaseCategory1;
 import com.shousi.mapper.BaseCategory1Mapper;
 import com.shousi.util.SleepUtils;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -157,8 +159,8 @@ public class BaseCategory1ServiceImpl extends ServiceImpl<BaseCategory1Mapper, B
     // 问题：解决无法可重入锁
     Map<Thread, String> threadMap = new HashMap<>();
 
-    @Override
-    public void setNum() {
+    // @Override
+    public void setNum08() {
         // 假设这里有很耗时的业务操作...
         String token = threadMap.get(Thread.currentThread());
         Boolean acquireLock;
@@ -192,7 +194,21 @@ public class BaseCategory1ServiceImpl extends ServiceImpl<BaseCategory1Mapper, B
                     break;
                 }
             }
-            setNum();
+            setNum08();
+        }
+    }
+
+    @Autowired
+    private RedissonClient redissonClient;
+
+    @Override
+    public void setNum() {
+        RLock lock = redissonClient.getLock("lock");
+        try {
+            lock.lock();
+            doBusiness();
+        } finally {
+            lock.unlock();
         }
     }
 

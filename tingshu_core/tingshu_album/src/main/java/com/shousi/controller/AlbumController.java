@@ -43,7 +43,7 @@ public class AlbumController {
         return RetVal.ok(pageParam);
     }
 
-    @TingShuLogin
+//    @TingShuLogin
     @Operation(summary = "根据id查询专辑")
     @GetMapping("getAlbumInfoById/{id}")
     public RetVal<AlbumInfo> getAlbumInfoById(@PathVariable Long id) {
