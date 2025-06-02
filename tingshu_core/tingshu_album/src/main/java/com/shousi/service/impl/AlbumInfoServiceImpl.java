@@ -96,6 +96,8 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
         // 缓存中获取
         String cacheKey = RedisConstant.ALBUM_INFO_PREFIX + id;
         AlbumInfo albumInfoRedis = (AlbumInfo) redisTemplate.opsForValue().get(cacheKey);
+        // 减小锁的粒度
+        String lockKey = "lock-" + id;
         if (albumInfoRedis == null) {
             String token = threadMap.get();
             Boolean acquireLock;
@@ -107,7 +109,7 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
                 // 增加唯一标识
                 token = UUID.randomUUID().toString();
                 // 利用 redis 的 nx操作
-                acquireLock = redisTemplate.opsForValue().setIfAbsent("lock", token, 3, TimeUnit.SECONDS);
+                acquireLock = redisTemplate.opsForValue().setIfAbsent(lockKey, token, 3, TimeUnit.SECONDS);
             }
             if (Boolean.TRUE.equals(acquireLock)) {
                 // 缓存中没有，则从数据库中获取
@@ -119,7 +121,7 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
                 // 执行lua脚本
                 // 创建 RedisScript 对象，使用构造函数初始化要执行的lua脚本和返回对象类型
                 DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(luaScript, Long.class);
-                redisTemplate.execute(redisScript, Arrays.asList("lock"), token);
+                redisTemplate.execute(redisScript, Arrays.asList(lockKey), token);
                 // 移除掉锁
                 threadMap.remove();
                 return albumInfoRedis;
@@ -128,7 +130,7 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
                 while (true) {
                     SleepUtils.millis(50);
                     // 获取到锁，终止循环
-                    if (Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent("lock", token, 30, TimeUnit.SECONDS))) {
+                    if (Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(lockKey, token, 30, TimeUnit.SECONDS))) {
                         threadMap.set(token);
                         break;
                     }
