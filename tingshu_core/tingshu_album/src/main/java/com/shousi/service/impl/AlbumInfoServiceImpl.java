@@ -3,6 +3,7 @@ package com.shousi.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.shousi.constant.RedisConstant;
 import com.shousi.constant.SystemConstant;
 import com.shousi.entity.AlbumAttributeValue;
 import com.shousi.entity.AlbumInfo;
@@ -14,7 +15,9 @@ import com.shousi.service.AlbumInfoService;
 import com.shousi.service.AlbumStatService;
 import com.shousi.util.AuthContextHolder;
 import com.shousi.vo.AlbumTempVo;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -39,6 +42,9 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
 
     @Autowired
     private AlbumInfoMapper albumInfoMapper;
+
+    @Autowired
+    private RedisTemplate<Object, Object> redisTemplate;
 
     @Override
     @Transactional
@@ -72,6 +78,25 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
 
     @Override
     public AlbumInfo getAlbumInfoById(Long id) {
+//        AlbumInfo albumInfo = getAlbumInfoDB(id);
+        AlbumInfo albumInfo = getAlbumInfoRedis(id);
+        return albumInfo;
+    }
+
+    private AlbumInfo getAlbumInfoRedis(Long id) {
+        String cacheKey = RedisConstant.ALBUM_INFO_PREFIX + id;
+        AlbumInfo albumInfoRedis = (AlbumInfo) redisTemplate.opsForValue().get(cacheKey);
+        if (albumInfoRedis == null) {
+            // 缓存中没有，则从数据库中获取
+            albumInfoRedis = getAlbumInfoDB(id);
+            // 缓存中保存
+            redisTemplate.opsForValue().set(cacheKey, albumInfoRedis);
+        }
+        return albumInfoRedis;
+    }
+
+    @NotNull
+    private AlbumInfo getAlbumInfoDB(Long id) {
         AlbumInfo albumInfo = this.getById(id);
         LambdaQueryWrapper<AlbumAttributeValue> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(AlbumAttributeValue::getAlbumId, id);
