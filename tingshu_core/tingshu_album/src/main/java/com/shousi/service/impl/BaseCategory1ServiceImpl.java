@@ -115,7 +115,7 @@ public class BaseCategory1ServiceImpl extends ServiceImpl<BaseCategory1Mapper, B
             // 执行lua脚本
             // 创建 RedisScript 对象，使用构造函数初始化要执行的lua脚本和返回对象类型
             DefaultRedisScript<Integer> redisScript = new DefaultRedisScript<>(luaScript, Integer.class);
-            redisTemplate.execute(redisScript, List.of("lock"), redisToken);
+            redisTemplate.execute(redisScript, Arrays.asList("lock"), redisToken);
         } else {
             // 没有拿到锁继续获取锁
             setNum06();
@@ -139,7 +139,7 @@ public class BaseCategory1ServiceImpl extends ServiceImpl<BaseCategory1Mapper, B
             // 执行lua脚本
             // 创建 RedisScript 对象，使用构造函数初始化要执行的lua脚本和返回对象类型
             DefaultRedisScript<Integer> redisScript = new DefaultRedisScript<>(luaScript, Integer.class);
-            redisTemplate.execute(redisScript, List.of("lock"), redisToken);
+            redisTemplate.execute(redisScript, Arrays.asList("lock"), redisToken);
         } else {
             // 没有拿到锁继续获取锁
             while (true) {
@@ -179,7 +179,7 @@ public class BaseCategory1ServiceImpl extends ServiceImpl<BaseCategory1Mapper, B
             // 执行lua脚本
             // 创建 RedisScript 对象，使用构造函数初始化要执行的lua脚本和返回对象类型
             DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(luaScript, Long.class);
-            redisTemplate.execute(redisScript, List.of("lock"), token);
+            redisTemplate.execute(redisScript, Arrays.asList("lock"), token);
             // 移除掉锁
             threadMap.remove(Thread.currentThread());
         } else {

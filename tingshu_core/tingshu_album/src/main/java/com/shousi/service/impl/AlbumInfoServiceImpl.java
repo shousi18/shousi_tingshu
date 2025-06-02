@@ -14,16 +14,22 @@ import com.shousi.service.AlbumAttributeValueService;
 import com.shousi.service.AlbumInfoService;
 import com.shousi.service.AlbumStatService;
 import com.shousi.util.AuthContextHolder;
+import com.shousi.util.SleepUtils;
 import com.shousi.vo.AlbumTempVo;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author 86172
@@ -45,6 +51,8 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
 
     @Autowired
     private RedisTemplate<Object, Object> redisTemplate;
+
+    private final ThreadLocal<String> threadMap = new ThreadLocal<>();
 
     @Override
     @Transactional
@@ -79,8 +87,56 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     @Override
     public AlbumInfo getAlbumInfoById(Long id) {
 //        AlbumInfo albumInfo = getAlbumInfoDB(id);
-        AlbumInfo albumInfo = getAlbumInfoRedis(id);
+//        AlbumInfo albumInfo = getAlbumInfoRedis(id);
+        AlbumInfo albumInfo = getAlbumInfoFromRedisWithThreadLocal(id);
         return albumInfo;
+    }
+
+    private AlbumInfo getAlbumInfoFromRedisWithThreadLocal(Long id) {
+        // 缓存中获取
+        String cacheKey = RedisConstant.ALBUM_INFO_PREFIX + id;
+        AlbumInfo albumInfoRedis = (AlbumInfo) redisTemplate.opsForValue().get(cacheKey);
+        if (albumInfoRedis == null) {
+            String token = threadMap.get();
+            Boolean acquireLock;
+            if (StringUtils.hasText(token)) {
+                // 说明是可重入锁
+                acquireLock = true;
+            } else {
+                // 说明是另一把锁
+                // 增加唯一标识
+                token = UUID.randomUUID().toString();
+                // 利用 redis 的 nx操作
+                acquireLock = redisTemplate.opsForValue().setIfAbsent("lock", token, 3, TimeUnit.SECONDS);
+            }
+            if (Boolean.TRUE.equals(acquireLock)) {
+                // 缓存中没有，则从数据库中获取
+                albumInfoRedis = getAlbumInfoDB(id);
+                // 缓存中保存
+                redisTemplate.opsForValue().set(cacheKey, albumInfoRedis);
+                // lua脚本
+                String luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+                // 执行lua脚本
+                // 创建 RedisScript 对象，使用构造函数初始化要执行的lua脚本和返回对象类型
+                DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(luaScript, Long.class);
+                redisTemplate.execute(redisScript, Arrays.asList("lock"), token);
+                // 移除掉锁
+                threadMap.remove();
+                return albumInfoRedis;
+            } else {
+                // 没有拿到锁继续获取锁
+                while (true) {
+                    SleepUtils.millis(50);
+                    // 获取到锁，终止循环
+                    if (Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent("lock", token, 30, TimeUnit.SECONDS))) {
+                        threadMap.set(token);
+                        break;
+                    }
+                }
+                return getAlbumInfoFromRedisWithThreadLocal(id);
+            }
+        }
+        return albumInfoRedis;
     }
 
     private AlbumInfo getAlbumInfoRedis(Long id) {
