@@ -8,8 +8,10 @@ import com.shousi.constant.SystemConstant;
 import com.shousi.entity.AlbumAttributeValue;
 import com.shousi.entity.AlbumInfo;
 import com.shousi.entity.AlbumStat;
+import com.shousi.execption.GuiguException;
 import com.shousi.mapper.AlbumInfoMapper;
 import com.shousi.query.AlbumInfoQuery;
+import com.shousi.result.ResultCodeEnum;
 import com.shousi.service.AlbumAttributeValueService;
 import com.shousi.service.AlbumInfoService;
 import com.shousi.service.AlbumStatService;
@@ -17,6 +19,8 @@ import com.shousi.util.AuthContextHolder;
 import com.shousi.util.SleepUtils;
 import com.shousi.vo.AlbumTempVo;
 import org.jetbrains.annotations.NotNull;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -25,10 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -53,6 +54,9 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     private RedisTemplate<Object, Object> redisTemplate;
 
     private final ThreadLocal<String> threadMap = new ThreadLocal<>();
+
+    @Autowired
+    private RedissonClient redissonClient;
 
     @Override
     @Transactional
@@ -88,8 +92,28 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     public AlbumInfo getAlbumInfoById(Long id) {
 //        AlbumInfo albumInfo = getAlbumInfoDB(id);
 //        AlbumInfo albumInfo = getAlbumInfoRedis(id);
-        AlbumInfo albumInfo = getAlbumInfoFromRedisWithThreadLocal(id);
+//        AlbumInfo albumInfo = getAlbumInfoFromRedisWithThreadLocal(id);
+        AlbumInfo albumInfo = getAlbumInfoByRedisson(id);
         return albumInfo;
+    }
+
+    private AlbumInfo getAlbumInfoByRedisson(Long id) {
+        String cacheKey = RedisConstant.ALBUM_INFO_PREFIX + id;
+        AlbumInfo albumInfoRedis = (AlbumInfo) redisTemplate.opsForValue().get(cacheKey);
+        if (Objects.isNull(albumInfoRedis)) {
+            RLock lock = redissonClient.getLock("lock-" + id);
+            try {
+                lock.lock();
+                AlbumInfo albumInfoDB = getAlbumInfoDB(id);
+                redisTemplate.opsForValue().set(cacheKey, albumInfoDB);
+                return albumInfoDB;
+            } catch (Exception e) {
+                throw new GuiguException(ResultCodeEnum.SERVICE_ERROR);
+            } finally {
+                lock.unlock();
+            }
+        }
+        return albumInfoRedis;
     }
 
     private AlbumInfo getAlbumInfoFromRedisWithThreadLocal(Long id) {
