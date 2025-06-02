@@ -18,7 +18,9 @@ import com.shousi.service.AlbumStatService;
 import com.shousi.util.AuthContextHolder;
 import com.shousi.util.SleepUtils;
 import com.shousi.vo.AlbumTempVo;
+import jakarta.annotation.Resource;
 import org.jetbrains.annotations.NotNull;
+import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +59,9 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
 
     @Autowired
     private RedissonClient redissonClient;
+
+    @Resource
+    private RBloomFilter<Long> albumBloomFilter;
 
     @Override
     @Transactional
@@ -104,9 +109,12 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
             RLock lock = redissonClient.getLock("lock-" + id);
             try {
                 lock.lock();
-                AlbumInfo albumInfoDB = getAlbumInfoDB(id);
-                redisTemplate.opsForValue().set(cacheKey, albumInfoDB);
-                return albumInfoDB;
+                boolean contains = albumBloomFilter.contains(id);
+                if (contains) {
+                    AlbumInfo albumInfoDB = getAlbumInfoDB(id);
+                    redisTemplate.opsForValue().set(cacheKey, albumInfoDB);
+                    return albumInfoDB;
+                }
             } catch (Exception e) {
                 throw new GuiguException(ResultCodeEnum.SERVICE_ERROR);
             } finally {
