@@ -21,6 +21,7 @@
         <module>tingshu_account</module>
         <module>tingshu_album</module>
         <module>tingshu_user</module>
+        <module>tingshu_search</module>
     </modules>
 
     <packaging>pom</packaging>
