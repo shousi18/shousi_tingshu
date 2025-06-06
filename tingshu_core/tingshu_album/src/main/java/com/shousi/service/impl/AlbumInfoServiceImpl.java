@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shousi.SearchFeignClient;
+import com.shousi.constant.KafkaConstant;
 import com.shousi.constant.RedisConstant;
 import com.shousi.constant.SystemConstant;
 import com.shousi.entity.AlbumAttributeValue;
@@ -16,6 +17,7 @@ import com.shousi.result.ResultCodeEnum;
 import com.shousi.service.AlbumAttributeValueService;
 import com.shousi.service.AlbumInfoService;
 import com.shousi.service.AlbumStatService;
+import com.shousi.service.KafkaService;
 import com.shousi.util.AuthContextHolder;
 import com.shousi.util.SleepUtils;
 import com.shousi.vo.AlbumTempVo;
@@ -67,6 +69,9 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     @Autowired
     private SearchFeignClient searchFeignClient;
 
+    @Autowired
+    private KafkaService kafkaService;
+
     @Override
     @Transactional
     public void saveAlbumInfo(AlbumInfo albumInfo) {
@@ -91,7 +96,7 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
         albumStatService.saveBatch(albumStats);
         // 保存到elasticSearch中
         if (SystemConstant.OPEN_ALBUM.equals(albumInfo.getIsOpen())) {
-            searchFeignClient.onSaleAlbum(albumInfo.getId());
+            kafkaService.sendMessage(KafkaConstant.ONSALE_ALBUM_QUEUE, String.valueOf(albumInfo.getId()));
         }
         // 布隆过滤器中添加id值
         albumBloomFilter.add(albumInfo.getId());
@@ -221,9 +226,9 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
             albumAttributeValueService.saveBatch(albumPropertyValueList);
         }
         if (SystemConstant.OPEN_ALBUM.equals(albumInfo.getIsOpen())) {
-            searchFeignClient.onSaleAlbum(albumInfo.getId());
+            kafkaService.sendMessage(KafkaConstant.ONSALE_ALBUM_QUEUE, String.valueOf(albumInfo.getId()));
         }else {
-            searchFeignClient.offSaleAlbum(albumInfo.getId());
+            kafkaService.sendMessage(KafkaConstant.OFFSALE_ALBUM_QUEUE, String.valueOf(albumInfo.getId()));
         }
     }
 
@@ -240,8 +245,8 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
         LambdaQueryWrapper<AlbumStat> statLambdaQueryWrapper = new LambdaQueryWrapper<>();
         statLambdaQueryWrapper.eq(AlbumStat::getAlbumId, albumId);
         albumStatService.remove(statLambdaQueryWrapper);
-        // todo 删除专辑其他信息
-        searchFeignClient.offSaleAlbum(albumId);
+        // 删除专辑其他信息
+        kafkaService.sendMessage(KafkaConstant.OFFSALE_ALBUM_QUEUE, String.valueOf(albumId));
     }
 
     private List<AlbumStat> buildAlbumStatData(Long albumId) {
