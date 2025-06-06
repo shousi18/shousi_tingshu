@@ -3,6 +3,7 @@ package com.shousi.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.shousi.SearchFeignClient;
 import com.shousi.constant.RedisConstant;
 import com.shousi.constant.SystemConstant;
 import com.shousi.entity.AlbumAttributeValue;
@@ -63,6 +64,9 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
     @Resource
     private RBloomFilter<Long> albumBloomFilter;
 
+    @Autowired
+    private SearchFeignClient searchFeignClient;
+
     @Override
     @Transactional
     public void saveAlbumInfo(AlbumInfo albumInfo) {
@@ -85,7 +89,12 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
         // 保存专辑的数据信息
         List<AlbumStat> albumStats = buildAlbumStatData(albumInfo.getId());
         albumStatService.saveBatch(albumStats);
-        // todo 后面还要保存的信息
+        // 保存到elasticSearch中
+        if (SystemConstant.OPEN_ALBUM.equals(albumInfo.getIsOpen())) {
+            searchFeignClient.onSaleAlbum(albumInfo.getId());
+        }
+        // 布隆过滤器中添加id值
+        albumBloomFilter.add(albumInfo.getId());
     }
 
     @Override
@@ -211,7 +220,11 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
             });
             albumAttributeValueService.saveBatch(albumPropertyValueList);
         }
-        // todo 还有其他操作待做
+        if (SystemConstant.OPEN_ALBUM.equals(albumInfo.getIsOpen())) {
+            searchFeignClient.onSaleAlbum(albumInfo.getId());
+        }else {
+            searchFeignClient.offSaleAlbum(albumInfo.getId());
+        }
     }
 
     @Override
@@ -228,6 +241,7 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
         statLambdaQueryWrapper.eq(AlbumStat::getAlbumId, albumId);
         albumStatService.remove(statLambdaQueryWrapper);
         // todo 删除专辑其他信息
+        searchFeignClient.offSaleAlbum(albumId);
     }
 
     private List<AlbumStat> buildAlbumStatData(Long albumId) {
