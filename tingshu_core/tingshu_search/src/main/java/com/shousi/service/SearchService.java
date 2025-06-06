@@ -7,4 +7,6 @@ public interface SearchService {
      * @param albumId
      */
     void onSaleAlbum(Long albumId);
+
+    void offSaleAlbum(Long albumId);
 }

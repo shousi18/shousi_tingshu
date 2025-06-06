@@ -75,4 +75,9 @@ public class SearchServiceImpl implements SearchService {
         // 保存到elasticSearch中
         albumRepository.save(albumInfoIndex);
     }
+
+    @Override
+    public void offSaleAlbum(Long albumId) {
+        albumRepository.deleteById(albumId);
+    }
 }

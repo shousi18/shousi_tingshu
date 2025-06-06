@@ -24,4 +24,19 @@ public class SearchController {
     public void onSaleAlbum(@PathVariable Long albumId) {
         searchService.onSaleAlbum(albumId);
     }
+
+    @Operation(summary = "批量上架专辑")
+    @GetMapping("batchOnSaleAlbum")
+    public String batchOnSaleAlbum() {
+        for (long i = 1; i < 1585; i++) {
+            searchService.onSaleAlbum(i);
+        }
+        return "success";
+    }
+
+    @Operation(summary = "下架专辑")
+    @GetMapping("offSaleAlbum/{albumId}")
+    public void offSaleAlbum(@PathVariable Long albumId) {
+        searchService.offSaleAlbum(albumId);
+    }
 }
