@@ -1,18 +1,25 @@
 package com.shousi.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.shousi.entity.AlbumAttributeValue;
 import com.shousi.entity.AlbumInfo;
+import com.shousi.entity.BaseCategoryView;
 import com.shousi.login.TingShuLogin;
 import com.shousi.query.AlbumInfoQuery;
 import com.shousi.result.RetVal;
+import com.shousi.service.AlbumAttributeValueService;
 import com.shousi.service.AlbumInfoService;
+import com.shousi.service.BaseCategoryViewService;
 import com.shousi.util.AuthContextHolder;
 import com.shousi.vo.AlbumTempVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "专辑管理")
 @RestController
@@ -21,6 +28,12 @@ public class AlbumController {
 
     @Autowired
     private AlbumInfoService albumInfoService;
+
+    @Autowired
+    private AlbumAttributeValueService albumAttributeValueService;
+
+    @Autowired
+    private BaseCategoryViewService baseCategoryViewService;
 
     @TingShuLogin
     @Operation(summary = "新增专辑")
@@ -65,5 +78,19 @@ public class AlbumController {
     public RetVal<?> deleteAlbumInfo(@PathVariable Long albumId) {
         albumInfoService.deleteAlbumInfo(albumId);
         return RetVal.ok();
+    }
+
+    @Operation(summary = "获取专辑属性值列表")
+    @GetMapping("getAlbumPropertyValue/{albumId}")
+    public List<AlbumAttributeValue> getAlbumPropertyValue(@PathVariable Long albumId) {
+        LambdaQueryWrapper<AlbumAttributeValue> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AlbumAttributeValue::getAlbumId, albumId);
+        return albumAttributeValueService.list(wrapper);
+    }
+
+    @Operation(summary = "通过三级分类id查询分类信息")
+    @GetMapping("getCategoryView/{category3Id}")
+    public BaseCategoryView getCategoryView(@PathVariable Long category3Id){
+        return baseCategoryViewService.getById(category3Id);
     }
 }
