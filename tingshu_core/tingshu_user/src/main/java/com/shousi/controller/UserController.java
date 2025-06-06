@@ -34,14 +34,14 @@ public class UserController {
     @Autowired
     private UserInfoService userInfoService;
 
-    @TingShuLogin
-    @Operation(summary = "获取用户信息")
-    @GetMapping("/getUserInfo")
-    public RetVal<UserInfoVo> getUserInfo() {
-        Long userId = AuthContextHolder.getUserId();
+    @Operation(summary = "获取用户个人信息")
+    @GetMapping("getUserById/{userId}")
+    public RetVal<UserInfoVo> getUserById(@PathVariable Long userId)  {
         UserInfo userInfo = userInfoService.getById(userId);
         UserInfoVo userInfoVo = new UserInfoVo();
-        BeanUtils.copyProperties(userInfo, userInfoVo);
+        if(userInfo!=null){
+            BeanUtils.copyProperties(userInfo,userInfoVo);
+        }
         return RetVal.ok(userInfoVo);
     }
 }

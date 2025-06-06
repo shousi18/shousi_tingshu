@@ -1,6 +1,7 @@
 package com.shousi.controller;
 
 import com.shousi.entity.BaseAttribute;
+import com.shousi.entity.BaseCategoryView;
 import com.shousi.login.TingShuLogin;
 import com.shousi.result.RetVal;
 import com.shousi.service.BaseAttributeService;
@@ -40,5 +41,11 @@ public class CategoryController {
     public RetVal<List<BaseAttribute>> getPropertyByCategory1Id(@PathVariable("category1Id") Long category1Id) {
         List<BaseAttribute> baseAttributeList = baseAttributeService.getPropertyByCategory1Id(category1Id);
         return RetVal.ok(baseAttributeList);
+    }
+
+    @Operation(summary = "通过三级分类id查询分类信息")
+    @GetMapping("getCategoryView/{category3Id}")
+    public BaseCategoryView getCategoryView(@PathVariable Long category3Id){
+        return baseCategoryViewService.getById(category3Id);
     }
 }

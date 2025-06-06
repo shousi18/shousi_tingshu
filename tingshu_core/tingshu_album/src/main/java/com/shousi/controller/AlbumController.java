@@ -87,10 +87,4 @@ public class AlbumController {
         wrapper.eq(AlbumAttributeValue::getAlbumId, albumId);
         return albumAttributeValueService.list(wrapper);
     }
-
-    @Operation(summary = "通过三级分类id查询分类信息")
-    @GetMapping("getCategoryView/{category3Id}")
-    public BaseCategoryView getCategoryView(@PathVariable Long category3Id){
-        return baseCategoryViewService.getById(category3Id);
-    }
 }
