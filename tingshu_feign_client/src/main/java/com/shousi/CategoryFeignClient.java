@@ -16,4 +16,7 @@ public interface CategoryFeignClient {
 
     @GetMapping("/api/album/category/getCategory3ListByCategory1Id/{category1Id}")
     public RetVal<List<BaseCategory3>> getCategory3ListByCategory1Id(@PathVariable Long category1Id);
+
+    @GetMapping("/api/album/category/getCategory3ListByCategory1Id/{category1Id}")
+    public RetVal<List<BaseCategory3>> getCategory3TopByCategory1Id(@PathVariable Long category1Id);
 }

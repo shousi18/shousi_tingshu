@@ -1,5 +1,13 @@
 package com.shousi.service.impl;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.alibaba.fastjson.JSONObject;
 import com.shousi.AlbumFeignClient;
 import com.shousi.CategoryFeignClient;
 import com.shousi.UserFeignClient;
@@ -8,13 +16,17 @@ import com.shousi.repository.AlbumRepository;
 import com.shousi.result.RetVal;
 import com.shousi.service.SearchService;
 import com.shousi.vo.UserInfoVo;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -22,6 +34,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SearchServiceImpl implements SearchService {
 
+    @Qualifier("com.shousi.AlbumFeignClient")
     @Autowired
     private AlbumFeignClient albumFeignClient;
 
@@ -33,6 +46,9 @@ public class SearchServiceImpl implements SearchService {
 
     @Autowired
     private AlbumRepository albumRepository;
+
+    @Autowired
+    private ElasticsearchClient elasticsearchClient;
 
     @Override
     public void onSaleAlbum(Long albumId) {
@@ -79,5 +95,52 @@ public class SearchServiceImpl implements SearchService {
     @Override
     public void offSaleAlbum(Long albumId) {
         albumRepository.deleteById(albumId);
+    }
+
+    @SneakyThrows
+    @Override
+    public List<Map<String, Object>> getChannelData(Long category1Id) {
+        List<BaseCategory3> baseCategory3List = categoryFeignClient.getCategory3TopByCategory1Id(category1Id).getData();
+        Map<Long, BaseCategory3> baseCategory3Map = baseCategory3List.stream()
+                .collect(Collectors.toMap(BaseEntity::getId, baseCategory3 -> baseCategory3));
+        List<FieldValue> fieldValueList = baseCategory3List.stream()
+                .map(baseCategory3 -> FieldValue.of(baseCategory3.getId()))
+                .collect(Collectors.toList());
+        // 搜索es语句
+        SearchResponse<AlbumInfoIndex> response = elasticsearchClient.search(searchRequest -> searchRequest
+                        .index("albuminfo")
+                        .query(q -> q.terms(
+                                t -> t.field("category3Id")
+                                        .terms(new TermsQueryField.Builder().value(fieldValueList).build())
+                        ))
+                        .aggregations(
+                                "category3IdAgg", a -> a.terms(t -> t.field("category3Id").size(10))
+                                        .aggregations(
+                                                "topSixHotScoreAgg", aa -> aa
+                                                        .topHits(at -> at
+                                                                .size(6)
+                                                                .sort(xs -> xs.field(xf -> xf.field("hotScore").order(SortOrder.Desc))))
+                                        )
+                        )
+                ,
+                AlbumInfoIndex.class);
+        return response.aggregations().get("category3IdAgg")
+                .lterms()
+                .buckets()
+                .array()
+                .stream()
+                .map(bucket -> {
+                    List<AlbumInfoIndex> topAlbumInfoIndexList = bucket.aggregations().get("topSixHotScoreAgg")
+                            .topHits()
+                            .hits()
+                            .hits()
+                            .stream()
+                            .map(hit -> JSONObject.parseObject(hit.source().toString(), AlbumInfoIndex.class))
+                            .collect(Collectors.toList());
+                    Map<String, Object> retMap = new HashMap<>();
+                    retMap.put("baseCategory3", baseCategory3Map.get(bucket.key()));
+                    retMap.put("list", topAlbumInfoIndexList);
+                    return retMap;
+                }).collect(Collectors.toList());
     }
 }
