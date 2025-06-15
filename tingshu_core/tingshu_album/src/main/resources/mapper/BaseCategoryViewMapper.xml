@@ -38,16 +38,19 @@
     </resultMap>
 
     <select id="getAllCategoryList" resultMap="categoryMap">
-        SELECT
-        c1.id category1Id,
+        SELECT c1.id category1Id,
         c1.NAME category1Name,
         c2.id category2Id,
         c2.NAME category2Name,
         c3.id category3Id,
         c3.NAME category3Name
-        FROM
-        base_category1 c1
+        FROM base_category1 c1
         LEFT JOIN base_category2 c2 ON c1.id = c2.category1_id
         LEFT JOIN base_category3 c3 ON c2.id = c3.category2_id
+        <where>
+            <if test="category1Id != null">
+                and c1.id = #{category1Id}
+            </if>
+        </where>
     </select>
 </mapper>

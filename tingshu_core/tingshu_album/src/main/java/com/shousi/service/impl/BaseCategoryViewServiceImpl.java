@@ -25,7 +25,7 @@ public class BaseCategoryViewServiceImpl extends ServiceImpl<BaseCategoryViewMap
     @Autowired
     private BaseCategoryViewMapper baseCategoryViewMapper;
 
-//    @Override
+    //    @Override
     @Deprecated
     public List<CategoryVo> getAllCategoryList1() {
         // 获取所有分类
@@ -72,8 +72,8 @@ public class BaseCategoryViewServiceImpl extends ServiceImpl<BaseCategoryViewMap
 
 
     @Override
-    public List<CategoryVo> getAllCategoryList() {
-        return baseCategoryViewMapper.getAllCategoryList();
+    public List<CategoryVo> getAllCategoryList(Long category1Id) {
+        return baseCategoryViewMapper.getAllCategoryList(category1Id);
     }
 }
 

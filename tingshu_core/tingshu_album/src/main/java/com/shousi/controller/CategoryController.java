@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 @Tag(name = "分类管理")
 @RestController
@@ -42,7 +41,7 @@ public class CategoryController {
     @Operation(summary = "获取全部分类信息")
     @GetMapping("/getAllCategoryList")
     public RetVal<?> getAllCategoryList() {
-        List<CategoryVo> categoryVoList = baseCategoryViewService.getAllCategoryList();
+        List<CategoryVo> categoryVoList = baseCategoryViewService.getAllCategoryList(null);
         return RetVal.ok(categoryVoList);
     }
 
@@ -64,5 +63,15 @@ public class CategoryController {
     public RetVal<List<BaseCategory3>> getCategory3TopByCategory1Id(@PathVariable Long category1Id) {
         List<BaseCategory3> category3TopByCategory1Id = category3Service.getCategory3ListByCategory1Id(category1Id);
         return RetVal.ok(category3TopByCategory1Id);
+    }
+
+    @Operation(summary = "根据一级分类id获取全部分类信息")
+    @GetMapping("getCategoryByCategory1Id/{category1Id}")
+    public RetVal<CategoryVo> getCategoryByCategory1Id(@PathVariable Long category1Id){
+        List<CategoryVo> categoryVoList =categoryViewService.getAllCategoryList(category1Id);
+        if(!CollectionUtils.isEmpty(categoryVoList)){
+            return RetVal.ok(categoryVoList.get(0));
+        }
+        return RetVal.ok();
     }
 }
