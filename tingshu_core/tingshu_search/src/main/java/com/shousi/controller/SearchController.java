@@ -1,14 +1,13 @@
 package com.shousi.controller;
 
+import com.shousi.query.AlbumIndexQuery;
 import com.shousi.result.RetVal;
 import com.shousi.service.SearchService;
+import com.shousi.vo.AlbumSearchResponseVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -47,5 +46,12 @@ public class SearchController {
     public RetVal<List<Map<String, Object>>> getChannelData(@PathVariable Long category1Id) {
         List<Map<String, Object>> retData = searchService.getChannelData(category1Id);
         return RetVal.ok(retData);
+    }
+
+    @Operation(summary = "专辑搜索")
+    @PostMapping
+    public RetVal<AlbumSearchResponseVo> search(@RequestBody AlbumIndexQuery albumIndexQuery) {
+        AlbumSearchResponseVo searchResponseVo = searchService.search(albumIndexQuery);
+        return RetVal.ok(searchResponseVo);
     }
 }

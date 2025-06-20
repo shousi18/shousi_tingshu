@@ -3,18 +3,21 @@ package com.shousi.service.impl;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.alibaba.fastjson.JSONObject;
 import com.shousi.AlbumFeignClient;
 import com.shousi.CategoryFeignClient;
 import com.shousi.UserFeignClient;
 import com.shousi.entity.*;
+import com.shousi.query.AlbumIndexQuery;
 import com.shousi.repository.AlbumRepository;
 import com.shousi.result.RetVal;
 import com.shousi.service.SearchService;
+import com.shousi.vo.AlbumInfoIndexVo;
+import com.shousi.vo.AlbumSearchResponseVo;
 import com.shousi.vo.UserInfoVo;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +26,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -142,5 +143,126 @@ public class SearchServiceImpl implements SearchService {
                     retMap.put("list", topAlbumInfoIndexList);
                     return retMap;
                 }).collect(Collectors.toList());
+    }
+
+    @SneakyThrows
+    @Override
+    public AlbumSearchResponseVo search(AlbumIndexQuery albumIndexQuery) {
+        // 构建查询DSL
+        SearchRequest request = buildQueryDSL(albumIndexQuery);
+        // 执行搜索
+        SearchResponse<AlbumInfoIndex> response = elasticsearchClient.search(request, AlbumInfoIndex.class);
+        // 解析响应
+        AlbumSearchResponseVo albumSearchResponseVo = parseSearchResult(response);
+        albumSearchResponseVo.setPageNo(albumIndexQuery.getPageNo());
+        albumSearchResponseVo.setPageSize(albumIndexQuery.getPageSize());
+        albumSearchResponseVo.setTotalPages((albumSearchResponseVo.getTotal() + albumSearchResponseVo.getPageSize() - 1) / albumSearchResponseVo.getPageSize());
+        return albumSearchResponseVo;
+    }
+
+    private AlbumSearchResponseVo parseSearchResult(SearchResponse<AlbumInfoIndex> response) {
+        AlbumSearchResponseVo albumSearchResponseVo = new AlbumSearchResponseVo();
+        List<AlbumInfoIndexVo> albumInfoIndexList = new ArrayList<>();
+        albumSearchResponseVo.setTotal(response.hits().total().value());
+        List<Hit<AlbumInfoIndex>> searchAlbumInfoHits = response.hits().hits();
+        for (Hit<AlbumInfoIndex> searchAlbumInfoHit : searchAlbumInfoHits) {
+            AlbumInfoIndexVo albumInfoIndexVo = new AlbumInfoIndexVo();
+            BeanUtils.copyProperties(searchAlbumInfoHit.source(), albumInfoIndexVo);
+            if (!CollectionUtils.isEmpty(searchAlbumInfoHit.highlight())) {
+                albumInfoIndexVo.setAlbumTitle(searchAlbumInfoHit.highlight().get("albumTitle").get(0));
+            }
+            albumInfoIndexList.add(albumInfoIndexVo);
+        }
+        albumSearchResponseVo.setList(albumInfoIndexList);
+        return albumSearchResponseVo;
+    }
+
+    private SearchRequest buildQueryDSL(AlbumIndexQuery albumIndexQuery) {
+        //2.构建bool查询
+        BoolQuery.Builder boolQuery = new BoolQuery.Builder();
+        //3.构建should关键字查询
+        String keyword = albumIndexQuery.getKeyword();
+        if (!StringUtils.isEmpty(keyword)) {
+            boolQuery.should(s -> s.match(m -> m.field("albumTitle").query(keyword)));
+            boolQuery.should(s -> s.match(m -> m.field("albumIntro").query(keyword)));
+            boolQuery.should(s -> s.match(m -> m.field("announcerName").query(keyword)));
+        }
+        //4.根据一级分类id查询
+        Long category1Id = albumIndexQuery.getCategory1Id();
+        if (null != category1Id) {
+            boolQuery.filter(f -> f.term(t -> t.field("category1Id").value(category1Id)));
+        }
+        //4.根据二级分类id查询
+        Long category2Id = albumIndexQuery.getCategory2Id();
+        if (null != category2Id) {
+            boolQuery.filter(f -> f.term(t -> t.field("category2Id").value(category2Id)));
+        }
+        //4.根据三级分类id查询
+        Long category3Id = albumIndexQuery.getCategory3Id();
+        if (null != category3Id) {
+            boolQuery.filter(f -> f.term(t -> t.field("category3Id").value(category3Id)));
+        }
+        //5.根据分类属性嵌套过滤
+        List<String> propertyList = albumIndexQuery.getAttributeList();
+        if (!CollectionUtils.isEmpty(propertyList)) {
+            for (String property : propertyList) {
+                //property长的类似于这种格式-->15:32
+                String[] propertySplit = StringUtils.split(property, ":");
+                if (propertySplit != null && propertySplit.length == 2) {
+                    Query nestedQuery = NestedQuery.of(n -> n
+                            .path("attributeValueIndexList")
+                            .query(q -> q.bool(b -> b
+                                    .must(m -> m.term(t -> t.field("attributeValueIndexList.attributeId").value(propertySplit[0])))
+                                    .must(m -> m.term(t -> t.field("attributeValueIndexList.valueId").value(propertySplit[1])))
+                            )))._toQuery();
+                    boolQuery.filter(nestedQuery);
+                }
+            }
+        }
+        //1.构建最外层的query
+        Query query = boolQuery.build()._toQuery();
+        //6.构建分页与高亮信息
+        Integer pageNo = albumIndexQuery.getPageNo();
+        Integer pageSize = albumIndexQuery.getPageSize();
+        SearchRequest.Builder requestBuilder = new SearchRequest.Builder()
+                .index("albuminfo")
+                .from((pageNo - 1) * pageSize)
+                .size(pageSize)
+                .query(query)
+                .highlight(param -> param.fields("albumTitle", filed -> filed
+                        .preTags("<font color='red'>")
+                        .postTags("</font>")))
+                .source(param -> param.filter(filed -> filed.excludes("attributeValueIndexList", "hotScore")));
+        //7.构建排序信息 order=1:asc
+        String order = albumIndexQuery.getOrder();
+        String orderField = "hotScore";
+        String sortType = "desc";
+        //如果传递了排序参数
+        if (StringUtils.hasText(order)) {
+            String[] orderSplit = StringUtils.split(order, ":");
+            if (orderSplit != null && orderSplit.length == 2) {
+                switch (orderSplit[0]) {
+                    case "1":
+                        orderField = "hotScore";
+                        break;
+                    case "2":
+                        orderField = "playStatNum";
+                        break;
+                    case "3":
+                        orderField = "createTime";
+                        break;
+                }
+                sortType = orderSplit[1];
+            }
+        }
+        if (StringUtils.hasText(keyword)) {
+            String sortTypeParam = sortType;
+            String sortField = orderField;
+            requestBuilder.sort(s -> s.field(f -> f.field(sortField)
+                    .order("asc".equals(sortTypeParam) ? SortOrder.Asc : SortOrder.Desc)));
+        }
+        SearchRequest request = requestBuilder.build();
+        System.out.println("拼接的DSL语句:" + request.toString());
+        return request;
     }
 }
