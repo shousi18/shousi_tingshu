@@ -7,6 +7,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.Suggester;
+import co.elastic.clients.elasticsearch.core.search.Suggestion;
 import com.alibaba.fastjson.JSONObject;
 import com.shousi.AlbumFeignClient;
 import com.shousi.CategoryFeignClient;
@@ -14,8 +16,10 @@ import com.shousi.UserFeignClient;
 import com.shousi.entity.*;
 import com.shousi.query.AlbumIndexQuery;
 import com.shousi.repository.AlbumRepository;
+import com.shousi.repository.SuggestionRepository;
 import com.shousi.result.RetVal;
 import com.shousi.service.SearchService;
+import com.shousi.util.PinYinUtils;
 import com.shousi.vo.AlbumInfoIndexVo;
 import com.shousi.vo.AlbumSearchResponseVo;
 import com.shousi.vo.UserInfoVo;
@@ -24,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.elasticsearch.core.suggest.Completion;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -47,6 +52,9 @@ public class SearchServiceImpl implements SearchService {
 
     @Autowired
     private AlbumRepository albumRepository;
+
+    @Autowired
+    private SuggestionRepository suggestionRepository;
 
     @Autowired
     private ElasticsearchClient elasticsearchClient;
@@ -91,6 +99,25 @@ public class SearchServiceImpl implements SearchService {
 
         // 保存到elasticSearch中
         albumRepository.save(albumInfoIndex);
+
+        // 标题自动补全
+        SuggestIndex titleSuggestIndex = new SuggestIndex();
+        titleSuggestIndex.setId(UUID.randomUUID().toString().replaceAll("-", ""));
+        titleSuggestIndex.setTitle(albumInfo.getAlbumTitle());
+        titleSuggestIndex.setKeyword(new Completion(new String[]{albumInfo.getAlbumTitle()}));
+        titleSuggestIndex.setKeywordPinyin(new Completion(new String[]{PinYinUtils.toHanyuPinyin(albumInfo.getAlbumTitle())}));
+        titleSuggestIndex.setKeywordSequence(new Completion(new String[]{PinYinUtils.getFirstLetter(albumInfo.getAlbumTitle())}));
+        suggestionRepository.save(titleSuggestIndex);
+        // 专辑主播名称自动补全
+        if (StringUtils.hasText(albumInfoIndex.getAnnouncerName())) {
+            SuggestIndex announcerNameSuggestIndex = new SuggestIndex();
+            announcerNameSuggestIndex.setId(UUID.randomUUID().toString().replaceAll("-", ""));
+            announcerNameSuggestIndex.setTitle(albumInfoIndex.getAnnouncerName());
+            announcerNameSuggestIndex.setKeyword(new Completion(new String[]{albumInfoIndex.getAnnouncerName()}));
+            announcerNameSuggestIndex.setKeywordPinyin(new Completion(new String[]{PinYinUtils.toHanyuPinyin(albumInfoIndex.getAnnouncerName())}));
+            announcerNameSuggestIndex.setKeywordSequence(new Completion(new String[]{PinYinUtils.getFirstLetter(albumInfoIndex.getAnnouncerName())}));
+            suggestionRepository.save(announcerNameSuggestIndex);
+        }
     }
 
     @Override
@@ -158,6 +185,57 @@ public class SearchServiceImpl implements SearchService {
         albumSearchResponseVo.setPageSize(albumIndexQuery.getPageSize());
         albumSearchResponseVo.setTotalPages((albumSearchResponseVo.getTotal() + albumSearchResponseVo.getPageSize() - 1) / albumSearchResponseVo.getPageSize());
         return albumSearchResponseVo;
+    }
+
+    @Override
+    @SneakyThrows
+    public Set<String> autoCompleteSuggest(String keyword) {
+        Suggester suggester = new Suggester.Builder()
+                .suggesters("suggestionKeyword", s -> s
+                        .prefix(keyword)
+                        .completion(
+                                c -> c.field("keyword")
+                                        .size(10)
+                                        .skipDuplicates(true)
+                        )
+                )
+                .suggesters("suggestionKeywordPinyin", s -> s
+                        .prefix(keyword)
+                        .completion(
+                                c -> c.field("keywordPinyin")
+                                        .size(10)
+                                        .skipDuplicates(true)
+                        )
+                )
+                .suggesters("suggestionKeywordSequence", s -> s
+                        .prefix(keyword)
+                        .completion(
+                                c -> c.field("keywordSequence")
+                                        .size(10)
+                                        .skipDuplicates(true)
+                        )
+                ).build();
+        SearchResponse<SuggestIndex> response = elasticsearchClient.search(s -> s
+                .index("suggestinfo")
+                .suggest(suggester), SuggestIndex.class);
+        // 2.解析索引里面的信息-不可重复
+        Set<String> suggestTitleList = analysisResponse(response);
+        return suggestTitleList;
+    }
+
+    private Set<String> analysisResponse(SearchResponse<SuggestIndex> response) {
+        Set<String> stringHashSet = new HashSet<>();
+        Map<String, List<Suggestion<SuggestIndex>>> suggestMap = response.suggest();
+        suggestMap.entrySet().stream().forEach(entry -> {
+            List<Suggestion<SuggestIndex>> suggestionValueList = entry.getValue();
+            suggestionValueList.stream().forEach(suggestionValue -> {
+                List<String> stringList = suggestionValue.completion().options().stream()
+                        .map(option -> option.source().getTitle())
+                        .collect(Collectors.toList());
+                stringHashSet.addAll(stringList);
+            });
+        });
+        return stringHashSet;
     }
 
     private AlbumSearchResponseVo parseSearchResult(SearchResponse<AlbumInfoIndex> response) {

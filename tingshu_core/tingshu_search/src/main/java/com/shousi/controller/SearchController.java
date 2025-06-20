@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Tag(name = "搜索专辑管理")
 @RestController
@@ -53,5 +54,12 @@ public class SearchController {
     public RetVal<AlbumSearchResponseVo> search(@RequestBody AlbumIndexQuery albumIndexQuery) {
         AlbumSearchResponseVo searchResponseVo = searchService.search(albumIndexQuery);
         return RetVal.ok(searchResponseVo);
+    }
+
+    @Operation(summary = "关键字自动补全")
+    @GetMapping("autoCompleteSuggest/{keyword}")
+    public RetVal<Set<String>> autoCompleteSuggest(@PathVariable String keyword) {
+        Set<String> suggestTitleList = searchService.autoCompleteSuggest(keyword);
+        return RetVal.ok(suggestTitleList);
     }
 }

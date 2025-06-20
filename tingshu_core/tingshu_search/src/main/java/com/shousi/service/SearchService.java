@@ -5,6 +5,7 @@ import com.shousi.vo.AlbumSearchResponseVo;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface SearchService {
 
@@ -24,4 +25,11 @@ public interface SearchService {
      * @return
      */
     AlbumSearchResponseVo search(AlbumIndexQuery albumIndexQuery);
+
+    /**
+     * 关键字自动补全
+     * @param keyword
+     * @return
+     */
+    Set<String> autoCompleteSuggest(String keyword);
 }
