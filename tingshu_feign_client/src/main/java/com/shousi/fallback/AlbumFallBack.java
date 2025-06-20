@@ -4,6 +4,7 @@ import com.shousi.AlbumFeignClient;
 import com.shousi.entity.AlbumAttributeValue;
 import com.shousi.entity.AlbumInfo;
 import com.shousi.result.RetVal;
+import com.shousi.vo.AlbumStatVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,12 @@ public class AlbumFallBack implements AlbumFeignClient {
 
     @Override
     public List<AlbumAttributeValue> getAlbumPropertyValue(Long albumId) {
+        log.error("调用远程服务失败");
+        return null;
+    }
+
+    @Override
+    public RetVal<AlbumStatVo> getAlbumStatInfo(Long albumId) {
         log.error("调用远程服务失败");
         return null;
     }

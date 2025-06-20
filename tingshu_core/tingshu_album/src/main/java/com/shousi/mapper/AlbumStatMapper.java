@@ -2,6 +2,8 @@ package com.shousi.mapper;
 
 import com.shousi.entity.AlbumStat;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.shousi.vo.AlbumStatVo;
+import org.apache.ibatis.annotations.Param;
 
 /**
 * @author 86172
@@ -11,6 +13,12 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface AlbumStatMapper extends BaseMapper<AlbumStat> {
 
+    /**
+     * 获取专辑统计信息
+     * @param albumId
+     * @return
+     */
+    AlbumStatVo getAlbumStatInfo(@Param("albumId") Long albumId);
 }
 
 

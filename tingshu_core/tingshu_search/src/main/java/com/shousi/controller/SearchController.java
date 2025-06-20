@@ -1,5 +1,6 @@
 package com.shousi.controller;
 
+import com.shousi.login.TingShuLogin;
 import com.shousi.query.AlbumIndexQuery;
 import com.shousi.result.RetVal;
 import com.shousi.service.SearchService;
@@ -61,5 +62,13 @@ public class SearchController {
     public RetVal<Set<String>> autoCompleteSuggest(@PathVariable String keyword) {
         Set<String> suggestTitleList = searchService.autoCompleteSuggest(keyword);
         return RetVal.ok(suggestTitleList);
+    }
+
+    @TingShuLogin
+    @Operation(summary = "专辑详情")
+    @GetMapping("getAlbumDetail/{albumId}")
+    public RetVal<Map<String,Object>> getAlbumDetail(@PathVariable Long albumId){
+        Map<String,Object> result = searchService.getAlbumDetail(albumId);
+        return RetVal.ok(result);
     }
 }

@@ -32,4 +32,11 @@ public interface SearchService {
      * @return
      */
     Set<String> autoCompleteSuggest(String keyword);
+
+    /**
+     * 专辑详情
+     * @param albumId
+     * @return
+     */
+    Map<String, Object> getAlbumDetail(Long albumId);
 }

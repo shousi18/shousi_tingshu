@@ -22,6 +22,7 @@ import com.shousi.service.SearchService;
 import com.shousi.util.PinYinUtils;
 import com.shousi.vo.AlbumInfoIndexVo;
 import com.shousi.vo.AlbumSearchResponseVo;
+import com.shousi.vo.AlbumStatVo;
 import com.shousi.vo.UserInfoVo;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -221,6 +222,24 @@ public class SearchServiceImpl implements SearchService {
         // 2.解析索引里面的信息-不可重复
         Set<String> suggestTitleList = analysisResponse(response);
         return suggestTitleList;
+    }
+
+    @Override
+    public Map<String, Object> getAlbumDetail(Long albumId) {
+        Map<String, Object> result = new HashMap<>();
+        // 专辑基本信息
+        AlbumInfo albumInfo = albumFeignClient.getAlbumInfoById(albumId).getData();
+        result.put("albumInfo", albumInfo);
+        // 专辑统计信息
+        AlbumStatVo albumStatVo = albumFeignClient.getAlbumStatInfo(albumId).getData();
+        result.put("albumStatVo", albumStatVo);
+        // 专辑分类信息
+        BaseCategoryView categoryView = categoryFeignClient.getCategoryView(albumInfo.getCategory3Id());
+        result.put("baseCategoryView", categoryView);
+        // 用户基本信息
+        UserInfoVo userInfoVo = userFeignClient.getUserById(albumInfo.getUserId()).getData();
+        result.put("announcer", userInfoVo);
+        return result;
     }
 
     private Set<String> analysisResponse(SearchResponse<SuggestIndex> response) {

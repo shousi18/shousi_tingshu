@@ -7,12 +7,14 @@ import com.shousi.entity.AlbumAttributeValue;
 import com.shousi.entity.AlbumInfo;
 import com.shousi.entity.BaseCategoryView;
 import com.shousi.login.TingShuLogin;
+import com.shousi.mapper.AlbumStatMapper;
 import com.shousi.query.AlbumInfoQuery;
 import com.shousi.result.RetVal;
 import com.shousi.service.AlbumAttributeValueService;
 import com.shousi.service.AlbumInfoService;
 import com.shousi.service.BaseCategoryViewService;
 import com.shousi.util.AuthContextHolder;
+import com.shousi.vo.AlbumStatVo;
 import com.shousi.vo.AlbumTempVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "专辑管理")
 @RestController
@@ -34,6 +37,9 @@ public class AlbumController {
 
     @Autowired
     private BaseCategoryViewService baseCategoryViewService;
+
+    @Autowired
+    private AlbumStatMapper albumStatMapper;
 
     @TingShuLogin
     @Operation(summary = "新增专辑")
@@ -56,7 +62,7 @@ public class AlbumController {
         return RetVal.ok(pageParam);
     }
 
-//    @TingShuLogin
+    //    @TingShuLogin
     @Operation(summary = "根据id查询专辑")
     @GetMapping("getAlbumInfoById/{id}")
     public RetVal<AlbumInfo> getAlbumInfoById(@PathVariable Long id) {
@@ -86,5 +92,12 @@ public class AlbumController {
         LambdaQueryWrapper<AlbumAttributeValue> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AlbumAttributeValue::getAlbumId, albumId);
         return albumAttributeValueService.list(wrapper);
+    }
+
+    @Operation(summary = "获取专辑统计信息")
+    @GetMapping("getAlbumStatInfo/{albumId}")
+    public RetVal<AlbumStatVo> getAlbumStatInfo(@PathVariable Long albumId) {
+        AlbumStatVo albumStat = albumStatMapper.getAlbumStatInfo(albumId);
+        return RetVal.ok(albumStat);
     }
 }
