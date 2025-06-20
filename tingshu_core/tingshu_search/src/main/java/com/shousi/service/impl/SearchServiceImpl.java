@@ -316,7 +316,7 @@ public class SearchServiceImpl implements SearchService {
         String orderField = "hotScore";
         String sortType = "desc";
         //如果传递了排序参数
-        if (StringUtils.hasText(order)) {
+        if (!StringUtils.hasText(order)) {
             String[] orderSplit = StringUtils.split(order, ":");
             if (orderSplit != null && orderSplit.length == 2) {
                 switch (orderSplit[0]) {
@@ -333,7 +333,7 @@ public class SearchServiceImpl implements SearchService {
                 sortType = orderSplit[1];
             }
         }
-        if (StringUtils.hasText(keyword)) {
+        if (!StringUtils.hasText(keyword)) {
             String sortTypeParam = sortType;
             String sortField = orderField;
             requestBuilder.sort(s -> s.field(f -> f.field(sortField)
