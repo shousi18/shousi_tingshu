@@ -24,6 +24,7 @@ import com.shousi.vo.AlbumInfoIndexVo;
 import com.shousi.vo.AlbumSearchResponseVo;
 import com.shousi.vo.AlbumStatVo;
 import com.shousi.vo.UserInfoVo;
+import io.netty.util.concurrent.CompleteFuture;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -35,6 +36,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -224,8 +226,10 @@ public class SearchServiceImpl implements SearchService {
         return suggestTitleList;
     }
 
-    @Override
-    public Map<String, Object> getAlbumDetail(Long albumId) {
+    // @Override
+    @Deprecated
+    public Map<String, Object> getAlbumDetail01(Long albumId) {
+        long start = System.currentTimeMillis();
         Map<String, Object> result = new HashMap<>();
         // 专辑基本信息
         AlbumInfo albumInfo = albumFeignClient.getAlbumInfoById(albumId).getData();
@@ -239,6 +243,39 @@ public class SearchServiceImpl implements SearchService {
         // 用户基本信息
         UserInfoVo userInfoVo = userFeignClient.getUserById(albumInfo.getUserId()).getData();
         result.put("announcer", userInfoVo);
+        long end = System.currentTimeMillis();
+        System.out.println("查询耗时：" + (end - start));
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> getAlbumDetail(Long albumId) {
+        long start = System.currentTimeMillis();
+        Map<String, Object> result = new HashMap<>();
+        // 专辑基本信息
+        CompletableFuture<AlbumInfo> albumInfoFuture = CompletableFuture.supplyAsync(() -> {
+            AlbumInfo albumInfo = albumFeignClient.getAlbumInfoById(albumId).getData();
+            result.put("albumInfo", albumInfo);
+            return albumInfo;
+        });
+        CompletableFuture<Void> albumStatVoFuture = CompletableFuture.runAsync(() -> {
+            // 专辑统计信息
+            AlbumStatVo albumStatVo = albumFeignClient.getAlbumStatInfo(albumId).getData();
+            result.put("albumStatVo", albumStatVo);
+        });
+        CompletableFuture<Void> categoryFuture = albumInfoFuture.thenAcceptAsync(albumInfo -> {
+            // 专辑分类信息
+            BaseCategoryView categoryView = categoryFeignClient.getCategoryView(albumInfo.getCategory3Id());
+            result.put("baseCategoryView", categoryView);
+        });
+        CompletableFuture<Void> userInfoVoFuture = albumInfoFuture.thenAcceptAsync(albumInfo -> {
+            // 用户基本信息
+            UserInfoVo userInfoVo = userFeignClient.getUserById(albumInfo.getUserId()).getData();
+            result.put("announcer", userInfoVo);
+        });
+        CompletableFuture.allOf(albumStatVoFuture, categoryFuture, userInfoVoFuture).join();
+        long end = System.currentTimeMillis();
+        System.out.println("查询耗时：" + (end - start));
         return result;
     }
 
