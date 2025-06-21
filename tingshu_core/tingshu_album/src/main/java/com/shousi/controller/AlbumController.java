@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.shousi.entity.AlbumAttributeValue;
 import com.shousi.entity.AlbumInfo;
-import com.shousi.entity.BaseCategoryView;
 import com.shousi.login.TingShuLogin;
 import com.shousi.mapper.AlbumStatMapper;
 import com.shousi.query.AlbumInfoQuery;
@@ -22,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Tag(name = "专辑管理")
 @RestController
@@ -99,5 +97,13 @@ public class AlbumController {
     public RetVal<AlbumStatVo> getAlbumStatInfo(@PathVariable Long albumId) {
         AlbumStatVo albumStat = albumStatMapper.getAlbumStatInfo(albumId);
         return RetVal.ok(albumStat);
+    }
+
+    @TingShuLogin(required = false)
+    @Operation(summary = "是否订阅专辑")
+    @GetMapping("isSubscribe/{albumId}")
+    public RetVal<Boolean> isSubscribe(@PathVariable Long albumId) {
+        boolean flag = albumInfoService.isSubscribe(albumId);
+        return RetVal.ok(flag);
     }
 }

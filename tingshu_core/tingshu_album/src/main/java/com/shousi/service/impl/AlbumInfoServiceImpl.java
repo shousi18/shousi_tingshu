@@ -19,6 +19,7 @@ import com.shousi.service.AlbumInfoService;
 import com.shousi.service.AlbumStatService;
 import com.shousi.service.KafkaService;
 import com.shousi.util.AuthContextHolder;
+import com.shousi.util.MongoUtil;
 import com.shousi.util.SleepUtils;
 import com.shousi.vo.AlbumTempVo;
 import jakarta.annotation.Resource;
@@ -27,6 +28,9 @@ import org.redisson.api.RBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -71,6 +75,9 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
 
     @Autowired
     private KafkaService kafkaService;
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     @Override
     @Transactional
@@ -227,7 +234,7 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
         }
         if (SystemConstant.OPEN_ALBUM.equals(albumInfo.getIsOpen())) {
             kafkaService.sendMessage(KafkaConstant.ONSALE_ALBUM_QUEUE, String.valueOf(albumInfo.getId()));
-        }else {
+        } else {
             kafkaService.sendMessage(KafkaConstant.OFFSALE_ALBUM_QUEUE, String.valueOf(albumInfo.getId()));
         }
     }
@@ -247,6 +254,14 @@ public class AlbumInfoServiceImpl extends ServiceImpl<AlbumInfoMapper, AlbumInfo
         albumStatService.remove(statLambdaQueryWrapper);
         // 删除专辑其他信息
         kafkaService.sendMessage(KafkaConstant.OFFSALE_ALBUM_QUEUE, String.valueOf(albumId));
+    }
+
+    @Override
+    public boolean isSubscribe(Long albumId) {
+        Long userId = AuthContextHolder.getUserId();
+        Query query = Query.query(Criteria.where("userId").is(userId).and("albumId").is(albumId));
+        long count = mongoTemplate.count(query, "userSubscribe");
+        return count > 0;
     }
 
     private List<AlbumStat> buildAlbumStatData(Long albumId) {

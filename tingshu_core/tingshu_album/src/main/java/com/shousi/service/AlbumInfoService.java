@@ -45,4 +45,11 @@ public interface AlbumInfoService extends IService<AlbumInfo> {
      * @param albumId
      */
     void deleteAlbumInfo(Long albumId);
+
+    /**
+     * 是否订阅专辑
+     * @param albumId
+     * @return
+     */
+    boolean isSubscribe(Long albumId);
 }
