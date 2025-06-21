@@ -3,7 +3,10 @@ package com.shousi.service.impl;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
-import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -17,14 +20,12 @@ import com.shousi.entity.*;
 import com.shousi.query.AlbumIndexQuery;
 import com.shousi.repository.AlbumRepository;
 import com.shousi.repository.SuggestionRepository;
-import com.shousi.result.RetVal;
 import com.shousi.service.SearchService;
 import com.shousi.util.PinYinUtils;
 import com.shousi.vo.AlbumInfoIndexVo;
 import com.shousi.vo.AlbumSearchResponseVo;
 import com.shousi.vo.AlbumStatVo;
 import com.shousi.vo.UserInfoVo;
-import io.netty.util.concurrent.CompleteFuture;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -37,6 +38,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 @Service
@@ -248,6 +250,9 @@ public class SearchServiceImpl implements SearchService {
         return result;
     }
 
+    @Autowired
+    private ThreadPoolExecutor myThreadPoolExecutor;
+
     @Override
     public Map<String, Object> getAlbumDetail(Long albumId) {
         long start = System.currentTimeMillis();
@@ -256,23 +261,27 @@ public class SearchServiceImpl implements SearchService {
         CompletableFuture<AlbumInfo> albumInfoFuture = CompletableFuture.supplyAsync(() -> {
             AlbumInfo albumInfo = albumFeignClient.getAlbumInfoById(albumId).getData();
             result.put("albumInfo", albumInfo);
+            System.out.println(Thread.currentThread().getName() + "查询专辑信息");
             return albumInfo;
-        });
+        }, myThreadPoolExecutor);
         CompletableFuture<Void> albumStatVoFuture = CompletableFuture.runAsync(() -> {
             // 专辑统计信息
             AlbumStatVo albumStatVo = albumFeignClient.getAlbumStatInfo(albumId).getData();
             result.put("albumStatVo", albumStatVo);
-        });
+            System.out.println(Thread.currentThread().getName() + "专辑统计信息");
+        }, myThreadPoolExecutor);
         CompletableFuture<Void> categoryFuture = albumInfoFuture.thenAcceptAsync(albumInfo -> {
             // 专辑分类信息
             BaseCategoryView categoryView = categoryFeignClient.getCategoryView(albumInfo.getCategory3Id());
             result.put("baseCategoryView", categoryView);
-        });
+            System.out.println(Thread.currentThread().getName() + "专辑分类信息");
+        }, myThreadPoolExecutor);
         CompletableFuture<Void> userInfoVoFuture = albumInfoFuture.thenAcceptAsync(albumInfo -> {
             // 用户基本信息
             UserInfoVo userInfoVo = userFeignClient.getUserById(albumInfo.getUserId()).getData();
             result.put("announcer", userInfoVo);
-        });
+            System.out.println(Thread.currentThread().getName() + "用户信息");
+        }, myThreadPoolExecutor);
         CompletableFuture.allOf(albumStatVoFuture, categoryFuture, userInfoVoFuture).join();
         long end = System.currentTimeMillis();
         System.out.println("查询耗时：" + (end - start));
